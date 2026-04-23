@@ -62,6 +62,111 @@ The Swift Fit Cowork plugin (`~/SwiftFitEvents/SwiftFitEvents-Claude/`) is **alr
 
 Potential second public portfolio piece: **`swift-skills-evals`** or similar — an MCP-native eval framework for Claude Code agents. Would be scope-appropriate *during* the Gauntlet program (or immediately before admission if time permits). Strongest possible pitch: "I built the eval framework that Ragas/LangSmith don't cover."
 
+## Eval build-out plan (concrete next-session work)
+
+The eval harness is NOT inside the RAG code (`src/`). It's adjacent — a separate Python harness that runs the system and scores the output. Think "unit tests for AI."
+
+### Phase 1 — Golden set (human-authored)
+
+File: `evals/datasets/01-naive-rag.jsonl`
+
+10-15 queries written by Alexander, each with:
+```json
+{
+  "query_id": "intrinsic-value-01",
+  "query": "What does Buffett say about intrinsic value?",
+  "expected_chunks": ["2011", "2013", "2015"],          // years the answer should draw from
+  "expected_fragments": ["intrinsic business value", "book value", "per-share"],
+  "must_not_mention": ["GEICO"],                         // off-topic guardrail
+  "query_type": "synthesis",
+  "notes": "Should cite multiple years; most important metric Buffett discusses"
+}
+```
+
+Write these by hand. They're the bar for "what good looks like." This is where human judgment lives.
+
+### Phase 2 — Scorers (Ragas + custom)
+
+File: `evals/scorers/`
+
+```python
+# Using Ragas (the library)
+from ragas.metrics import faithfulness, context_precision, context_recall, answer_relevancy
+from ragas import evaluate
+
+# Plus custom scorers we write ourselves
+def task_success(output, expected_fragments):
+    """Binary: did the output contain all required fragments?"""
+    return all(frag.lower() in output.lower() for frag in expected_fragments)
+
+def year_coverage(retrieved_chunks, expected_years):
+    """Recall@k at the year level."""
+    retrieved_years = {c.metadata["year"] for c in retrieved_chunks}
+    return len(retrieved_years & set(expected_years)) / len(expected_years)
+```
+
+Mix Ragas's reference implementations with task-specific scorers only we care about.
+
+### Phase 3 — Runner
+
+File: `evals/run_evals.py`
+
+```python
+def run_eval(step: str):
+    dataset = load_golden_set(f"evals/datasets/{step}.jsonl")
+    system = import_module(f"src.{step}.generation")  # dynamically load the RAG system
+
+    results = []
+    for query in dataset:
+        output = system.answer(query["query"])          # run the real RAG pipeline
+        results.append({
+            "query_id": query["query_id"],
+            "task_success": task_success(output["answer"], query["expected_fragments"]),
+            "year_coverage": year_coverage(output["retrieved_chunks"], query["expected_chunks"]),
+            "faithfulness": ragas_faithfulness(output),
+        })
+
+    summary = aggregate(results)
+    write_report(f"docs/eval-runs/{step}-{today}.md", summary, results)
+```
+
+`python evals/run_evals.py --step 01-naive-rag` → writes a dated markdown report.
+
+### Phase 4 — Report with commentary
+
+File: `docs/eval-runs/01-naive-rag-2026-04-xx.md`
+
+```markdown
+# Naive RAG — eval run 2026-04-xx
+
+## Summary
+- Task success: 7/10 (0.70)
+- Year coverage: 0.62 avg
+- Faithfulness: 0.81 avg
+
+## Failures worth investigating
+- Q: "What were Berkshire's largest acquisitions in the 2010s?"
+  - Failed. Retrieved chunks from 2008, 2009, 2011 — missed 2015-2019 era.
+  - Hypothesis: naive RAG has no year-scoped filter, embeddings cluster by topic not time.
+  - Fix: step 02 metadata filtering should solve this.
+
+## Next
+- Build step 02. Re-run both. Compare deltas.
+```
+
+This is the **portfolio artifact** — not just numbers, but *diagnosis*. Reviewers see you thinking like an engineer, not a tutorial-follower.
+
+### Phase 5 — LangSmith integration (optional)
+
+Once phase 1-4 ship, wire LangSmith so:
+- Traces are visible for every query
+- Golden-set runs via LangSmith dashboard instead of CLI
+- Comparison charts across commits/steps
+
+Skip if tight on time. Phases 1-4 are enough to show rigor.
+
+---
+
 ## Stack decisions (locked)
 
 | Choice | Reason |
