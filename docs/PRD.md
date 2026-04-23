@@ -42,6 +42,8 @@ The minimum artifact that passes the 30-second test:
 - [ ] **Step 02 (Metadata-filtered RAG)** with eval delta vs. step 01
 - [ ] **Step 03 (Hybrid search)** — BM25 + vector + RRF, with eval delta
 - [ ] **First blog post / write-up** on alexandergouyet.com linking back to the repo, framed around the eval deltas
+- [ ] **Baseline comparison eval: RAG vs. context-stuffing** — run the same 10-query golden set against (a) naive RAG step 01, (b) Claude 200K with all 20 letters pasted into context. Is RAG actually better for a 350K-token corpus? Honest answer makes for a strong portfolio piece: "I measured whether the technique even applies at my scale."
+- [ ] **"Training backwards" experiment log** — `docs/experiments.md` documenting each attempted fix + eval delta (e.g., "chunk size 500→300: year recall 0.54→0.58; chunk size 300→200: degraded to 0.50"). Shows disciplined iteration, not lucky guesses.
 
 ## v2 Scope — Deferred
 
