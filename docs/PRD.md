@@ -45,6 +45,47 @@ The minimum artifact that passes the 30-second test:
 - [ ] **Baseline comparison eval: RAG vs. context-stuffing** — run the same 10-query golden set against (a) naive RAG step 01, (b) Claude 200K with all 20 letters pasted into context. Is RAG actually better for a 350K-token corpus? Honest answer makes for a strong portfolio piece: "I measured whether the technique even applies at my scale."
 - [ ] **"Training backwards" experiment log** — `docs/experiments.md` documenting each attempted fix + eval delta (e.g., "chunk size 500→300: year recall 0.54→0.58; chunk size 300→200: degraded to 0.50"). Shows disciplined iteration, not lucky guesses.
 
+## v1.2 Scope — MCP-native eval loop for Swift Fit Cowork skills
+
+**Pitch:** apply the eval discipline from this repo (v1) to Alexander's actual production MCP-based agents. Build the eval harness that Ragas/LangSmith don't natively cover for Claude Code skills. This IS the differentiated portfolio piece #2.
+
+Likely lives as a **separate repo** — `AlexGouyet/claude-code-evals` or `AlexGouyet/swift-skills-evals` — but can incubate as a subdirectory here first, then split.
+
+### Target skills (pick 1-2, not all 20)
+
+Pick the highest-leverage retrieval-heavy skills:
+- `swift-discovery-call-prep` — multi-source agentic retrieval (HubSpot + Gmail + Drive + web). Maximum surface to measure.
+- `swift-proposal-builder` — mixed structured + fuzzy retrieval; directly revenue-impacting.
+
+### v1.2 checklist
+
+- [ ] **Golden set per skill** — hand-authored in JSONL or Notion. 5-10 real invocations with expected outputs.
+  - Each entry: trigger phrase, expected MCP tools called, expected output fragments, must_not_mention
+- [ ] **Eval harness script** — Python wrapper that invokes `claude -p "<trigger>"`, captures session JSONL, parses:
+  - Which MCP tools got called (tool-call trace)
+  - Generated output text
+  - Token usage + latency
+- [ ] **MCP-specific scorers**
+  - `tool_precision` — of MCPs called, how many were expected?
+  - `tool_recall` — of expected MCPs, how many got called?
+  - `task_success` — binary check on required output fragments
+  - `faithfulness` — LLM-as-judge: is the output grounded in what the tools returned?
+  - `latency_p95` — end-to-end wall clock
+- [ ] **Report generator** — markdown or Notion writeback with per-run numbers + commentary
+- [ ] **Weekly cron** — runs evals automatically via `scheduled-tasks/`; posts results to Notion Skill Eval DB
+
+### What this unlocks
+
+- Changes to a SKILL.md file can be measured before merging — prevents silent regressions
+- A dashboard view of "how well are my skills working" that beats the current Notion Skill Feedback DB (post-hoc + manual)
+- A talking point for Gauntlet that nobody else has: "I built the eval framework for Claude Code's MCP-based agents because it didn't exist"
+
+### Scope boundary
+
+Don't try to cover all 20 skills. Build the harness flexibly, apply to 1-2 skills well. Proves the pattern. Others can be added later.
+
+---
+
 ## v2 Scope — Deferred
 
 - Step 04 (Graph RAG) — Neo4j + entity extraction
