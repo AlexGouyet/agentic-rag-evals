@@ -2,22 +2,29 @@
 
 Every retrieval pattern in this repo is scored on the same six metrics. Scores are committed as markdown tables in `docs/eval-runs/` so progress is visible in git history.
 
-## The six metrics
+## The seven metrics
 
-### 1. Precision
+The four core Ragas metrics + latency, cost, and agent-specific behavior. Terminology follows the [Ragas](https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/) conventions where possible so reviewers can cross-reference industry-standard names.
+
+### 1. Context Precision *(Ragas: context_precision)*
 **What:** of the chunks the system retrieved, how many were actually relevant to the query.
 **Why:** high precision means less noise in the context window and fewer tokens wasted on irrelevant material.
 **How scored:** for each golden-set query, a human-labeled or LLM-judged set of "relevant" chunks. Precision = relevant retrieved / total retrieved.
 
-### 2. Recall (+ coverage)
+### 2. Context Recall + Coverage *(Ragas: context_recall)*
 **What:** of the chunks in the corpus that should have been retrieved, how many were.
 **Why:** missing relevant material is the #1 cause of hallucinated or evasive answers. Low recall can't be recovered downstream.
 **How scored:** recall@k against the golden set. Coverage tracks whether the corpus itself has the answer at all — distinguishes "we didn't find it" from "it isn't there."
 
-### 3. Groundedness
+### 3. Faithfulness / Groundedness *(Ragas: faithfulness)*
 **What:** is the generated output supported by the retrieved context, or is the LLM falling back to training data?
 **Why:** this is the RAG-specific failure mode. Beautiful-looking answers that ignore the retrieved chunks are worse than useful — they give false confidence.
-**How scored:** LLM-as-judge pass over each (generated claim, retrieved chunks) pair. Binary per claim; aggregated per response.
+**How scored:** LLM-as-judge pass over each (generated claim, retrieved chunks) pair. Binary per claim; aggregated per response. Ragas's published implementation agrees with human annotators ~95% of the time.
+
+### 3b. Answer Relevancy *(Ragas: answer_relevancy)*
+**What:** does the response address the query, even if grounded? High faithfulness + low relevancy = "technically correct but off-topic."
+**Why:** catches the subtle failure where retrieval worked but the generation missed the user's actual intent.
+**How scored:** generate synthetic questions from the response, compare to the original query via cosine similarity on embeddings.
 
 ### 4. Latency
 **What:** wall-clock time to answer, bucketed by query type.

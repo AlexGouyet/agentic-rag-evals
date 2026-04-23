@@ -49,16 +49,21 @@ Each step includes: working code, a ≥10-query golden set, and scored eval runs
 - **Eval / observability:** LangSmith (has first-class support for RAG datasets + LLM-as-judge scorers)
 - **Framework:** LangChain where it pulls weight, raw SDK where it doesn't
 
-## The six metrics
+## Metrics
 
 Every eval run reports these. Numbers live in `docs/eval-runs/` as markdown tables, commit-by-commit.
 
-1. **Precision** — of retrieved chunks, how many relevant
-2. **Recall (+ coverage)** — of relevant chunks in corpus, how many found
-3. **Groundedness** — output grounded in retrieved context, not training-data hallucination
-4. **Latency** — p50 / p95 per query-type bucket
-5. **Cost** — tokens per query, broken out by embedding / retrieval / generation
-6. **Agent-specific** (step 05 only) — tool-selection accuracy, query-decomposition quality, stop-quality (escalation / retry behavior)
+Mapped to [Ragas](https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/) terminology where different, so reviewers can cross-reference:
+
+1. **Context Precision** — of retrieved chunks, how many relevant *(Ragas: context_precision)*
+2. **Context Recall (+ coverage)** — of relevant chunks in corpus, how many found *(Ragas: context_recall)*
+3. **Faithfulness / Groundedness** — output grounded in retrieved context, not training-data hallucination *(Ragas: faithfulness)*
+4. **Answer Relevancy** — does the response actually address the query *(Ragas: answer_relevancy)*
+5. **Latency** — p50 / p95 per query-type bucket
+6. **Cost** — tokens per query, broken out by embedding / retrieval / generation
+7. **Agent-specific** (step 05 only) — tool-selection accuracy, query-decomposition quality, stop-quality (escalation / retry behavior)
+
+Following [LangSmith's recommended mix](https://docs.langchain.com/langsmith/evaluate-rag-tutorial): heuristic checks for deterministic outputs, LLM-as-judge for subjective quality, and versioned golden-set datasets to prevent drift across runs.
 
 ## How to run
 
