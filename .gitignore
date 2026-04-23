@@ -39,6 +39,10 @@ data/processed/
 .langsmith/
 .langchain/
 
+# Chroma local vector store (rebuild from ingestion.py)
+.chroma/
+**/.chroma/
+
 # OS
 .DS_Store
 Thumbs.db
