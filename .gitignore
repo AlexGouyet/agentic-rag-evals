@@ -1,0 +1,44 @@
+# Env / secrets
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Data / artifacts
+data/raw/
+data/processed/
+*.pkl
+*.ckpt
+*.log
+
+# LangSmith traces cache
+.langsmith/
+.langchain/
+
+# OS
+.DS_Store
+Thumbs.db
